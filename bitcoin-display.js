@@ -143,12 +143,26 @@
       if (isNaN(cleanPrice) || !this.currentBtcPrice) return null;
       return cleanPrice / this.currentBtcPrice;
     }
+    convertTo2024Btc(usdPrice) {
+      const cleanPrice = parseFloat(usdPrice.toString().replace(/[$,]/g, ""));
+      if (isNaN(cleanPrice) || !this.currentBtcPrice) return null;
+      return cleanPrice / 39507;
+    }
+    convertTo2020Btc(usdPrice) {
+      const cleanPrice = parseFloat(usdPrice.toString().replace(/[$,]/g, ""));
+      if (isNaN(cleanPrice) || !this.currentBtcPrice) return null;
+      return cleanPrice / 4000;
+    }
 
-    formatBtcPrice(btcAmount) {
+    formatBtcPrice(btcAmount, legacy) {
       if (!btcAmount) return "";
       if (this.displayInSats) {
         const sats = Math.round(btcAmount * 100_000_000);
-        return `ƀ${sats.toLocaleString()} (sats)`;
+        if (legacy !== undefined && legacy) {
+          return `ƀ${sats.toLocaleString()}`;
+        } else {
+          return `ƀ${sats.toLocaleString()} sats`;
+        }
       }
       if (btcAmount >= 1) return "₿" + btcAmount.toFixed(4);
       if (btcAmount >= 0.001) return "₿" + btcAmount.toFixed(6);
@@ -220,11 +234,21 @@
 
         const usdPrice = match[0];
         const btcAmount = this.convertToBtc(usdPrice);
+        const btc2024Amount = this.convertTo2024Btc(usdPrice);
+        const btc2020Amount = this.convertTo2020Btc(usdPrice);
         if (!btcAmount) return;
 
         const btcFormatted = this.formatBtcPrice(btcAmount);
-        const btcHTML = `<span class="btc-price-display"><span class="btc-amount">${btcFormatted}</span></span>`;
+        const btc2024Formatted = this.formatBtcPrice(btc2024Amount, true);
+        const btc2020Formatted = this.formatBtcPrice(btc2020Amount, true);
+        const btcHTML = `
+          <span class="btc-price-display">
+            <span class="btc-amount">${btcFormatted}</span>
+            <br><span class="btc-legacy">${btc2024Formatted} (last year)</span>
+            <br><span class="btc-legacy">${btc2020Formatted} (2020)</span>
+          </span>`;
         // <span class="usd-amount"> (${usdPrice})</span>`;
+
         span.innerHTML = btcHTML;
       });
 
@@ -339,6 +363,7 @@
   style.textContent = `
     .btc-price-display { display: inline-block; }
     .btc-amount { font-weight: bold; color: #f7931a; }
+    .btc-legacy { color: #f7931a; opacity: 0.8; font-size: 0.8em; }
     .usd-amount { font-size: 0.8em !important; color: #666 !important; opacity: 0.8; margin-left: 5px; }
    `;
   // @media (max-width: 768px) {
